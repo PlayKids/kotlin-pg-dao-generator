@@ -14,8 +14,6 @@ fun main(args: Array<String>) {
     }
 }
 
-fun runFileLessJob() { }
-
 fun runFileJob(fileName: String, outFile: String) {
     val file = File(fileName)
     if (!file.exists()) {
