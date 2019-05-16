@@ -23,8 +23,10 @@ fun runFileJob(fileName: String, outFile: String) {
         return
     }
 
-    val outputFolder = File(outFile.substringBeforeLast("/"))
-    outputFolder.mkdirs()
+    if (outFile.contains("/")) {
+        val outputFolder = File(outFile.substringBeforeLast("/"))
+        outputFolder.mkdirs()
+    }
 
     val output = File(outFile)
     output.createNewFile()
@@ -63,9 +65,8 @@ fun runFileJob(fileName: String, outFile: String) {
             )
         }
 
-    val daoClass = """
-$header
-class ${className}PostgreSQLDAO(private val db: Connection): ${className}DAO {
+    val daoClass = """$header
+class PostgreSQL${className}DAO(private val db: Connection): ${className}DAO {
 
     override suspend fun insert(${className.decapitalize()}: $className) {
         db.query(INSERT_QUERY,
