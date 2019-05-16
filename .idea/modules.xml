@@ -2,9 +2,9 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/postgres-dao-generator.iml" filepath="$PROJECT_DIR$/.idea/modules/postgres-dao-generator.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/postgres-dao-generator_main.iml" filepath="$PROJECT_DIR$/.idea/modules/postgres-dao-generator_main.iml" group="postgres-dao-generator" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/postgres-dao-generator_test.iml" filepath="$PROJECT_DIR$/.idea/modules/postgres-dao-generator_test.iml" group="postgres-dao-generator" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/kotlin-pg-dao-generator.iml" filepath="$PROJECT_DIR$/.idea/modules/kotlin-pg-dao-generator.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/kotlin-pg-dao-generator_main.iml" filepath="$PROJECT_DIR$/.idea/modules/kotlin-pg-dao-generator_main.iml" group="kotlin-pg-dao-generator" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/kotlin-pg-dao-generator_test.iml" filepath="$PROJECT_DIR$/.idea/modules/kotlin-pg-dao-generator_test.iml" group="kotlin-pg-dao-generator" />
     </modules>
   </component>
 </project>

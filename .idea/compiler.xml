@@ -2,6 +2,8 @@
 <project version="4">
   <component name="CompilerConfiguration">
     <bytecodeTargetLevel>
+      <module name="kotlin-pg-dao-generator_main" target="1.9" />
+      <module name="kotlin-pg-dao-generator_test" target="1.9" />
       <module name="postgres-dao-generator_main" target="1.9" />
       <module name="postgres-dao-generator_test" target="1.9" />
     </bytecodeTargetLevel>
