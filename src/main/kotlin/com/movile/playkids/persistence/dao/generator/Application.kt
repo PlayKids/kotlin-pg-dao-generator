@@ -10,7 +10,7 @@ fun main(args: Array<String>) {
     if (args.size > 1) {
         runFileJob(args[0], args[1])
     } else {
-        runFileLessJob()
+        println("You must provide an input file and an output file")
     }
 }
 
@@ -18,25 +18,39 @@ fun runFileLessJob() { }
 
 fun runFileJob(fileName: String, outFile: String) {
     val file = File(fileName)
-    val output = File(outFile).createNewFile()
+    if (!file.exists()) {
+        println("File $fileName does not exist!!")
+        return
+    }
+
+    val outputFolder = File(outFile.substringBeforeLast("/"))
+    outputFolder.mkdirs()
+
+    val output = File(outFile)
+    output.createNewFile()
 
     val lines = file.readLines()
 
+    if (lines.none { it.contains("data class") }) {
+        println("File $fileName is not a data class.")
+        return
+    }
+
     val header = lines
-        .takeWhile { it.removePrefix("data class") != it }
-        .joinToString { "\n" }
+        .takeWhile { !it.startsWith("data class") }
+        .joinToString("\n")
 
     val className = lines
-        .dropWhile { it.removePrefix("data class") == it }
+        .dropWhile { !it.startsWith("data class") }
         .first()
         .removePrefix("data class ")
         .substringBefore("(")
 
     val properties = lines
-        .dropWhile { it.removePrefix("data class") == it }
+        .dropWhile { !it.startsWith("data class") }
         .drop(1)
-        .takeWhile { it.removePrefix("val ") != it }
-        .map { it.removePrefix("val ") }
+        .takeWhile { it.startsWith("    val ") }
+        .map { it.removePrefix("    val ") }
         .map { line ->
             Property(
                 name = line.substringBefore(":"),
@@ -51,14 +65,13 @@ fun runFileJob(fileName: String, outFile: String) {
 
     val daoClass = """
 $header
-class ${className}PostgreSQLDAO(private val db: Db): ${className}DAO {
+class ${className}PostgreSQLDAO(private val db: Connection): ${className}DAO {
 
     override suspend fun insert(${className.decapitalize()}: $className) {
         db.query(INSERT_QUERY,
 ${
     properties
-        .map { "            " + it.name + ","}
-        .joinToString { "\n" }
+        .joinToString("\n") { "            ${className.decapitalize()}.${it.name}," }
         .dropLast(1)
 }
         ).await()
@@ -69,23 +82,49 @@ ${
 ${
     properties
         .drop(1)
-        .map { "            " + it.name + ","}
-        .joinToString { "\n" }
+        .joinToString("\n") { "            ${className.decapitalize()}.${it.name}," }
 }
             // WHERE
             ${properties.first().name}
         ).await()
     }
 
+    override suspend fun find(${properties.first().name}: ${properties.first().type}) =
+        db.query(FIND_QUERY, ${properties.first().name})
+            .awaitMapping { it.to$className() }
+            .firstOrNull()
+
+    override suspend fun findBy${properties.getOrNull(1)?.name?.capitalize()}(${properties.getOrNull(1)?.name}: ${properties.getOrNull(1)?.type}) =
+        db.query(FIND_BY_${properties.getOrNull(1)?.name?.toSnakeCase()?.toUpperCase()}_QUERY,
+            ${properties.getOrNull(1)?.name}
+        )
+            .awaitMapping { it.to$className() }
+
+    override suspend fun findBy${properties.getOrNull(2)?.name?.capitalize()}(${properties.getOrNull(2)?.name}: ${properties.getOrNull(2)?.type}) =
+        db.query(FIND_BY_${properties.getOrNull(2)?.name?.toSnakeCase()?.toUpperCase()}_QUERY,
+            ${properties.getOrNull(2)?.name}
+        )
+            .awaitMapping { it.to$className() }
+
+
+    private fun RowData.to$className() =
+        $className(
+${
+    properties
+        .joinToString("\n") { "            ${it.name} = get${it.type}(${it.name.toSnakeCase().toUpperCase()})${if (it.optional) "" else "!!"}," }
+        .dropLast(1)
+}
+        )
+
+
     companion object {
         private const val TABLE_NAME = "${className.toSnakeCase()}"
-        ${properties.map { it.toConstVal() }.joinToString { "\n" }}
+${properties.joinToString("\n") { "        " + it.toConstVal() }}
 
         private val PROJECTION = ${"\"\"\""}
 ${
     properties
-        .map { "        | $" + it.name.toSnakeCase().toUpperCase() + ","}
-        .joinToString { "\n" }
+        .joinToString("\n") { "        | $" + it.name.toSnakeCase().toUpperCase() + ","}
         .dropLast(1)
 }
         ${"\"\"\""}.trimMargin()
@@ -99,8 +138,7 @@ ${
         |UPDATE ${"$"}TABLE_NAME SET
 ${
     properties.drop(1)
-        .map { "        | $" + it.name.toSnakeCase().toUpperCase() + " = ?," }
-        .joinToString { "\n" }
+        .joinToString("\n") { "        | $" + it.name.toSnakeCase().toUpperCase() + " = ?," }
         .dropLast(1)
 }
         | WHERE ${properties.first().name.toSnakeCase().toUpperCase()} = ?
@@ -111,18 +149,22 @@ ${
         | WHERE ${properties.first().name.toSnakeCase().toUpperCase()} = ?
         ${"\"\"\""}.trimMargin()
 
-        private val FIND_BY_${properties[1].name.toSnakeCase().toUpperCase()}_QUERY = ${"\"\"\""}
+        private val FIND_BY_${properties.getOrNull(1)?.name?.toSnakeCase()?.toUpperCase()}_QUERY = ${"\"\"\""}
         |SELECT ${"$"}PROJECTION FROM ${"$"}TABLE_NAME
-        | WHERE ${properties[1].name.toSnakeCase().toUpperCase()} = ?
+        | WHERE ${properties.getOrNull(1)?.name?.toSnakeCase()?.toUpperCase()} = ?
         ${"\"\"\""}.trimMargin()
 
-        private val FIND_BY_${properties[2].name.toSnakeCase().toUpperCase()}_QUERY = ${"\"\"\""}
+        private val FIND_BY_${properties.getOrNull(2)?.name?.toSnakeCase()?.toUpperCase()}_QUERY = ${"\"\"\""}
         |SELECT ${"$"}PROJECTION FROM ${"$"}TABLE_NAME
-        | WHERE ${properties[2].name.toSnakeCase().toUpperCase()} = ?
+        | WHERE ${properties.getOrNull(2)?.name?.toSnakeCase()?.toUpperCase()} = ?
         ${"\"\"\""}.trimMargin()
     }
 }
     """
+
+    output.writeText(daoClass)
+
+    println("File $outFile successfully generated")
 }
 
 private fun Property.toConstVal(): String =
@@ -131,8 +173,8 @@ private fun Property.toConstVal(): String =
 
 private fun String.toSnakeCase(): String =
     this.map { if (it.isUpperCase()) "_${it.toLowerCase()}" else "$it" }
-        .joinToString()
-        .drop(1)
+        .joinToString("")
+        .removePrefix("_")
 
 data class Property(
     val name: String,
