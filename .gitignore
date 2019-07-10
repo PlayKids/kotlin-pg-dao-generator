@@ -69,3 +69,6 @@ fabric.properties
 
 # Build outputs
 build/
+
+# All IDEA files
+.idea/

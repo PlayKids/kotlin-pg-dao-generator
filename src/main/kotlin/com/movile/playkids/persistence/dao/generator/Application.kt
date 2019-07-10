@@ -84,7 +84,7 @@ ${
         .joinToString("\n") { "            ${className.decapitalize()}.${it.name}," }
 }
             // WHERE
-            ${properties.first().name}
+            ${className.decapitalize()}.${properties.first().name}
         ).await()
     }
 
@@ -140,22 +140,22 @@ ${
         .joinToString("\n") { "        | $" + it.name.toSnakeCase().toUpperCase() + " = ?," }
         .dropLast(1)
 }
-        | WHERE ${properties.first().name.toSnakeCase().toUpperCase()} = ?
+        | WHERE \$${properties.first().name.toSnakeCase().toUpperCase()} = ?
         ${"\"\"\""}.trimMargin()
 
         private val FIND_QUERY = ${"\"\"\""}
         |SELECT ${"$"}PROJECTION FROM ${"$"}TABLE_NAME
-        | WHERE ${properties.first().name.toSnakeCase().toUpperCase()} = ?
+        | WHERE \$${properties.first().name.toSnakeCase().toUpperCase()} = ?
         ${"\"\"\""}.trimMargin()
 
         private val FIND_BY_${properties.getOrNull(1)?.name?.toSnakeCase()?.toUpperCase()}_QUERY = ${"\"\"\""}
         |SELECT ${"$"}PROJECTION FROM ${"$"}TABLE_NAME
-        | WHERE ${properties.getOrNull(1)?.name?.toSnakeCase()?.toUpperCase()} = ?
+        | WHERE \$${properties.getOrNull(1)?.name?.toSnakeCase()?.toUpperCase()} = ?
         ${"\"\"\""}.trimMargin()
 
         private val FIND_BY_${properties.getOrNull(2)?.name?.toSnakeCase()?.toUpperCase()}_QUERY = ${"\"\"\""}
         |SELECT ${"$"}PROJECTION FROM ${"$"}TABLE_NAME
-        | WHERE ${properties.getOrNull(2)?.name?.toSnakeCase()?.toUpperCase()} = ?
+        | WHERE \$${properties.getOrNull(2)?.name?.toSnakeCase()?.toUpperCase()} = ?
         ${"\"\"\""}.trimMargin()
     }
 }
